@@ -19,7 +19,7 @@ ansible-galaxy collection install git+https://github.com/benpops89/ansible-colle
 
 ### mise_sync
 
-Ensures all tools specified in mise.toml are installed.
+Ensures all tools specified in mise.toml are installed. Runs `mise install` to install any missing tools from the config.
 
 #### Parameters
 
@@ -58,14 +58,14 @@ Ensures all tools specified in mise.toml are installed.
 
 ### mise_tool
 
-Install or uninstall specific tools.
+Add or remove tools from mise.toml configuration.
 
 #### Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | tools | list | required | List of tools (e.g., `["node@20", "python@3.11"]`). |
-| state | string | present | `present` to install, `absent` to uninstall. |
+| state | string | present | `present` to add to config, `absent` to remove from config. |
 | global | bool | false | Use global mise.toml instead of local. |
 
 #### Return Values
@@ -78,23 +78,23 @@ Install or uninstall specific tools.
 #### Examples
 
 ```yaml
-# Install specific tools
-- name: Install Node.js and Python
+# Add tools to config (installs and adds to mise.toml)
+- name: Add Node.js and Python to config
   benpops89.mise.mise_tool:
     tools:
       - node@20
       - python@3.11
     state: present
 
-# Install tools globally
-- name: Install tools globally
+# Add tools to global config
+- name: Add tools to global config
   benpops89.mise.mise_tool:
     tools:
       - node@20
     global: true
 
-# Uninstall specific tools
-- name: Remove Node.js
+# Remove tools from config (uninstalls and removes from mise.toml)
+- name: Remove Node.js from config
   benpops89.mise.mise_tool:
     tools:
       - node@20
