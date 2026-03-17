@@ -1,4 +1,4 @@
-# Ansible Collection: community.mise
+# Ansible Collection: benpops89.mise
 
 Ansible collection for managing [mise](https://mise.jdx.dev/) tools.
 
@@ -9,10 +9,10 @@ Ansible collection for managing [mise](https://mise.jdx.dev/) tools.
 
 ## Installation
 
-Install the collection from Ansible Galaxy:
+Install from GitHub:
 
 ```bash
-ansible-galaxy collection install community.mise
+ansible-galaxy collection install git+https://github.com/benpops89/ansible-collection-mise.git
 ```
 
 ## Modules
@@ -43,28 +43,28 @@ Ensures mise tools are in sync (installed or uninstalled) based on the mise.toml
 ```yaml
 # Ensure all mise tools are installed
 - name: Ensure mise tools are installed
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
 
 # Ensure global mise tools are installed
 - name: Ensure global mise tools are installed
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
     global: true
 
 # Trust config and ensure mise tools are installed
 - name: Ensure mise tools are installed (auto-trust config)
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
     path: /path/to/mise.toml
     trust: true
 
 # Trust global config and ensure mise tools are installed
 - name: Ensure global mise tools are installed (auto-trust config)
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
     global: true
     trust: true
 
 # Uninstall all mise tools
 - name: Remove all mise tools
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
     state: absent
 ```
 
@@ -82,7 +82,7 @@ ansible-playbook tests/integration/
 
 ## License
 
-GPL-3.0-or-later
+MIT
 
 ## Author
 
