@@ -114,7 +114,7 @@ def remove_tools(module, tools):
     if not tools:
         return False, "No tools to remove"
 
-    result = run_mise_command(module, ["use", "--remove"] + tools)
+    result = run_mise_command(module, ["unuse"] + tools)
     return True, f"Removed tools from config: {', '.join(tools)}"
 
 
