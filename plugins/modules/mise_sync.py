@@ -223,6 +223,17 @@ def get_installed_tools(tools):
     return installed
 
 
+def get_inactive_tools(tools):
+    """Get installed tools that are not currently active."""
+    inactive = []
+    for tool_name, versions in tools.items():
+        for version_info in versions:
+            if version_info.get("installed", False) and not version_info.get("active", False):
+                tool_spec = f"{tool_name}@{version_info.get('version')}"
+                inactive.append(tool_spec)
+    return inactive
+
+
 def get_missing_tools(tools):
     missing = []
     for tool_name, versions in tools.items():
@@ -256,7 +267,8 @@ def install_tools(module, tools):
 
 
 def uninstall_tools(module, tools):
-    installed = get_installed_tools(tools)
+    # Only uninstall tools that are installed but not currently active
+    installed = get_inactive_tools(tools)
 
     if not installed:
         return False, installed, []
