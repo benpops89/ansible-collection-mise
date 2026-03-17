@@ -134,7 +134,8 @@ def trust_config(module):
             result = run_mise_command(module, args + [config_dir], check=True)
             return
     if global_flag:
-        args.append("--global")
+        result = run_mise_command(module, args, check=True)
+        return
 
     result = run_mise_command(module, args, check=True)
 
