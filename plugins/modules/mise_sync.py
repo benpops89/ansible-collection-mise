@@ -8,9 +8,10 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: mise_sync
-short_description: Manage mise tool installations
+short_description: Sync mise tools from config
 description:
-    - Syncs mise tools by installing missing tools or uninstalling existing tools based on mise.toml configuration.
+    - Ensures all tools specified in mise.toml are installed.
+    - Runs mise install to install any missing tools.
 version_added: "0.1.0"
 author:
     - Ben Poppy (@benpops89)
@@ -31,12 +32,6 @@ options:
             - Required when running against a new config that hasn't been trusted.
         type: bool
         default: false
-    state:
-        description:
-            - Desired state of the tool.
-        type: str
-        choices: [present, absent]
-        default: present
 notes:
     - mise must be installed on the target host.
     - This module requires mise to be in PATH.
@@ -45,29 +40,24 @@ notes:
 EXAMPLES = r"""
 # Ensure all mise tools are installed
 - name: Ensure mise tools are installed
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
 
 # Ensure global mise tools are installed
 - name: Ensure global mise tools are installed
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
     global: true
 
 # Trust config and ensure mise tools are installed
 - name: Ensure mise tools are installed (auto-trust config)
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
     path: /path/to/mise.toml
     trust: true
 
 # Trust global config and ensure mise tools are installed
 - name: Ensure global mise tools are installed (auto-trust config)
-  community.mise.mise_sync:
+  benpops89.mise.mise_sync:
     global: true
     trust: true
-
-# Uninstall all mise tools
-- name: Remove all mise tools
-  community.mise.mise_sync:
-    state: absent
 """
 
 RETURN = r"""
@@ -78,9 +68,9 @@ changed:
 missing_tools:
     description: Tools that were missing (before install).
     type: list
-    returned: when state=present
+    returned: always
 installed_tools:
-    description: Tools that are/were installed.
+    description: Tools that are installed.
     type: list
     returned: always
 """
@@ -223,17 +213,6 @@ def get_installed_tools(tools):
     return installed
 
 
-def get_inactive_tools(tools):
-    """Get installed tools that are not currently active."""
-    inactive = []
-    for tool_name, versions in tools.items():
-        for version_info in versions:
-            if version_info.get("installed", False) and not version_info.get("active", False):
-                tool_spec = f"{tool_name}@{version_info.get('version')}"
-                inactive.append(tool_spec)
-    return inactive
-
-
 def get_missing_tools(tools):
     missing = []
     for tool_name, versions in tools.items():
@@ -253,30 +232,17 @@ def get_config_dir(module):
     return None
 
 
-def install_tools(module, tools):
-    missing = get_missing_tools(tools)
+def sync_tools(module):
+    missing = get_missing_tools(get_tools_state(module))
 
     if not missing:
-        return False, [], get_installed_tools(tools)
+        return False, missing, get_installed_tools(get_tools_state(module))
 
     # Run mise install without specifying tools - installs all missing tools from config
     cwd = get_config_dir(module)
     result = run_mise_command(module, ["install"], cwd=cwd)
 
-    return True, missing, get_installed_tools(tools)
-
-
-def uninstall_tools(module, tools):
-    # Only uninstall tools that are installed but not currently active
-    installed = get_inactive_tools(tools)
-
-    if not installed:
-        return False, installed, []
-
-    cwd = get_config_dir(module)
-    result = run_mise_command(module, ["uninstall"] + installed, cwd=cwd)
-
-    return True, installed, []
+    return True, missing, get_installed_tools(get_tools_state(module))
 
 
 def run_module():
@@ -284,9 +250,6 @@ def run_module():
         path=dict(type="path", required=False, default=None),
         **{"global": dict(type="bool", required=False, default=False)},
         trust=dict(type="bool", required=False, default=False),
-        state=dict(
-            type="str", required=False, default="present", choices=["present", "absent"]
-        ),
     )
 
     module = AnsibleModule(
@@ -296,22 +259,12 @@ def run_module():
 
     trust_config(module)
 
-    tools = get_tools_state(module)
-
-    if module.params["state"] == "present":
-        changed, missing, installed = install_tools(module, tools)
-        module.exit_json(
-            changed=changed,
-            missing_tools=missing,
-            installed_tools=installed,
-        )
-    else:
-        changed, uninstalled, installed = uninstall_tools(module, tools)
-        module.exit_json(
-            changed=changed,
-            installed_tools=installed,
-            missing_tools=uninstalled,
-        )
+    changed, missing, installed = sync_tools(module)
+    module.exit_json(
+        changed=changed,
+        missing_tools=missing,
+        installed_tools=installed,
+    )
 
 
 def main():

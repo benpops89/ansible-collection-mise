@@ -19,7 +19,7 @@ ansible-galaxy collection install git+https://github.com/benpops89/ansible-colle
 
 ### mise_sync
 
-Ensures mise tools are in sync (installed or uninstalled) based on the mise.toml configuration.
+Ensures all tools specified in mise.toml are installed.
 
 #### Parameters
 
@@ -28,7 +28,6 @@ Ensures mise tools are in sync (installed or uninstalled) based on the mise.toml
 | path | path | null | Path to `.mise.toml` file. Defaults to current directory. |
 | global | bool | false | Use global mise.toml instead of local. |
 | trust | bool | false | Trust the mise.toml config before running commands. |
-| state | string | present | `present` to install, `absent` to uninstall. |
 
 #### Return Values
 
@@ -36,7 +35,7 @@ Ensures mise tools are in sync (installed or uninstalled) based on the mise.toml
 |-----|------|-------------|
 | changed | bool | Whether any changes were made. |
 | missing_tools | list | Tools that were missing (before install). |
-| installed_tools | list | Tools that are/were installed. |
+| installed_tools | list | Tools that are installed. |
 
 #### Examples
 
@@ -55,16 +54,50 @@ Ensures mise tools are in sync (installed or uninstalled) based on the mise.toml
   benpops89.mise.mise_sync:
     path: /path/to/mise.toml
     trust: true
+```
 
-# Trust global config and ensure mise tools are installed
-- name: Ensure global mise tools are installed (auto-trust config)
-  benpops89.mise.mise_sync:
+### mise_tool
+
+Install or uninstall specific tools.
+
+#### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| tools | list | required | List of tools (e.g., `["node@20", "python@3.11"]`). |
+| state | string | present | `present` to install, `absent` to uninstall. |
+| global | bool | false | Use global mise.toml instead of local. |
+
+#### Return Values
+
+| Key | Type | Description |
+|-----|------|-------------|
+| changed | bool | Whether any changes were made. |
+| msg | string | Output message from the operation. |
+
+#### Examples
+
+```yaml
+# Install specific tools
+- name: Install Node.js and Python
+  benpops89.mise.mise_tool:
+    tools:
+      - node@20
+      - python@3.11
+    state: present
+
+# Install tools globally
+- name: Install tools globally
+  benpops89.mise.mise_tool:
+    tools:
+      - node@20
     global: true
-    trust: true
 
-# Uninstall all mise tools
-- name: Remove all mise tools
-  benpops89.mise.mise_sync:
+# Uninstall specific tools
+- name: Remove Node.js
+  benpops89.mise.mise_tool:
+    tools:
+      - node@20
     state: absent
 ```
 
