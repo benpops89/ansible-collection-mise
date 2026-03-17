@@ -127,17 +127,26 @@ def trust_config(module):
     path = module.params.get("path")
     global_flag = module.params.get("global")
 
-    args = ["trust"]
     if path:
         config_dir = os.path.dirname(os.path.abspath(path))
         if config_dir:
-            result = run_mise_command(module, args + [config_dir], check=True)
+            result = run_mise_command(module, ["trust", config_dir], check=True)
             return
+    
     if global_flag:
-        result = run_mise_command(module, args, check=True)
-        return
-
-    result = run_mise_command(module, args, check=True)
+        result = run_mise_command(module, ["config", "get", "MISE_GLOBAL_CONFIG_FILE"], check=False)
+        if result.returncode == 0 and result.stdout.strip():
+            global_config = result.stdout.strip()
+            trusted_paths = os.environ.get("MISE_TRUSTED_CONFIG_PATHS", "")
+            if global_config not in trusted_paths:
+                new_trusted = f"{trusted_paths}:{global_config}" if trusted_paths else global_config
+                run_mise_command(
+                    module, 
+                    ["trust", global_config], 
+                    check=True, 
+                    env={"MISE_TRUSTED_CONFIG_PATHS": new_trusted}
+                )
+            return
 
 
 def get_tools_state(module):
