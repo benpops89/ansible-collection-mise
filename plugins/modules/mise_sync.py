@@ -91,14 +91,14 @@ import os
 import subprocess
 
 
-def run_mise_command(module, args, check=True, env=None, cwd=None):
+def run_mise_command(module, args, check=True, env=None, cwd=None, use_global=False):
     cmd = ["mise"] + args
 
     cmd_env = os.environ.copy()
     if env:
         cmd_env.update(env)
 
-    if module.params.get("global"):
+    if use_global:
         cmd.append("--global")
 
     result = subprocess.run(
@@ -134,7 +134,7 @@ def trust_config(module):
             return
     
     if global_flag:
-        result = run_mise_command(module, ["config", "get", "MISE_GLOBAL_CONFIG_FILE"], check=False)
+        result = run_mise_command(module, ["config", "get", "MISE_GLOBAL_CONFIG_FILE"], check=False, use_global=True)
         if result.returncode == 0 and result.stdout.strip():
             global_config = result.stdout.strip()
             trusted_paths = os.environ.get("MISE_TRUSTED_CONFIG_PATHS", "")
@@ -153,14 +153,16 @@ def get_tools_state(module):
     path = module.params.get("path")
     global_flag = module.params.get("global")
     cwd = None
+    use_global = module.params.get("global", False)
     
     if path:
         config_dir = os.path.dirname(os.path.abspath(path))
         if config_dir:
             cwd = config_dir
+        use_global = False  # Use path, not global
 
     cmd = ["ls", "--json"]
-    result = run_mise_command(module, cmd, check=False, cwd=cwd)
+    result = run_mise_command(module, cmd, check=False, cwd=cwd, use_global=use_global)
 
     if result.returncode != 0:
         if "no tools found" in result.stderr.lower() or result.stdout.strip() == "":
@@ -184,7 +186,7 @@ def get_tools_state(module):
         config_path = os.path.abspath(path)
     elif global_flag:
         # Get the global config path
-        result = run_mise_command(module, ["config", "get", "MISE_GLOBAL_CONFIG_FILE"], check=False)
+        result = run_mise_command(module, ["config", "get", "MISE_GLOBAL_CONFIG_FILE"], check=False, use_global=True)
         if result.returncode == 0 and result.stdout.strip():
             config_path = result.stdout.strip()
     
