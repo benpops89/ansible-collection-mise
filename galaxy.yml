@@ -1,0 +1,22 @@
+namespace: benpops89
+name: mise
+version: 0.1.0
+readme: README.md
+authors:
+  - Ben Poppy (@benpops89)
+description: Ansible collection for managing mise tools
+tags:
+  - mise
+  - devops
+  - tools
+  - development
+license:
+  - MIT
+license_file: LICENSE
+repository: https://github.com/benpops89/ansible-collection-mise
+issues: https://github.com/benpops89/ansible-collection-mise/issues
+build_ignore:
+  - .gitignore
+  - "*.md"
+  - tests/
+  - ".venv/"

@@ -1,0 +1,73 @@
+---
+- name: Test mise_sync module
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    test_dir: /tmp/mise_test_integration
+
+  tasks:
+    - name: Ensure mise is installed
+      command: which mise
+      register: mise_check
+      failed_when: mise_check.rc != 0
+      changed_when: false
+
+    - name: Create test directory
+      file:
+        path: "{{ test_dir }}"
+        state: directory
+
+    - name: Cleanup any existing tool installs in test dir
+      file:
+        path: "{{ test_dir }}"
+        state: absent
+
+    - name: Create test directory again
+      file:
+        path: "{{ test_dir }}"
+        state: directory
+
+    - name: Create test mise.toml
+      copy:
+        dest: "{{ test_dir }}/mise.toml"
+        content: |
+          [tools]
+          shellcheck = "latest"
+
+    - name: Sync mise tools with trust
+      community.mise.mise_sync:
+        path: "{{ test_dir }}/mise.toml"
+        trust: true
+      register: sync_result
+
+    - name: Assert sync result
+      assert:
+        that:
+          - sync_result.installed_tools | length > 0
+
+    - name: Sync again (idempotent)
+      community.mise.mise_sync:
+        path: "{{ test_dir }}/mise.toml"
+      register: sync_result_again
+
+    - name: Assert idempotent result
+      assert:
+        that:
+          - not sync_result_again.changed
+
+    - name: Test global config
+      community.mise.mise_sync:
+        global: true
+      register: global_result
+
+    - name: Assert global result
+      assert:
+        that:
+          - global_result.installed_tools | length > 0
+
+    - name: Cleanup test directory
+      file:
+        path: "{{ test_dir }}"
+        state: absent
