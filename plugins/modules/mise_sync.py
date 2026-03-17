@@ -248,8 +248,9 @@ def install_tools(module, tools):
     if not missing:
         return False, [], get_installed_tools(tools)
 
+    # Run mise install without specifying tools - installs all missing tools from config
     cwd = get_config_dir(module)
-    result = run_mise_command(module, ["install"] + missing, cwd=cwd)
+    result = run_mise_command(module, ["install"], cwd=cwd)
 
     return True, missing, get_installed_tools(tools)
 
