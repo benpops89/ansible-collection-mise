@@ -8,24 +8,25 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: mise_tool
-short_description: Install or uninstall specific mise tools
+short_description: Add or remove mise tools from config
 description:
-    - Install or uninstall specific tools from mise.
-    - Tools are specified as a list (e.g., ["node@20", "python@3.11"]).
+    - Add or remove tools from mise.toml configuration.
+    - Uses 'mise use' to add tools (installs and adds to config).
+    - Uses 'mise use --remove' to remove tools (uninstalls and removes from config).
 version_added: "0.1.0"
 author:
     - Ben Poppy (@benpops89)
 options:
     tools:
         description:
-            - List of tools to install or uninstall.
+            - List of tools to add or remove.
             - Format: tool@version (e.g., "node@20", "python@3.11").
         type: list
         elements: str
         required: true
     state:
         description:
-            - Desired state of the tools.
+            - 'present' to add tools to config, 'absent' to remove tools from config.
         type: str
         choices: [present, absent]
         default: present
@@ -40,25 +41,23 @@ notes:
 """
 
 EXAMPLES = r"""
-# Install specific tools
-- name: Install Node.js and Python
+# Add tools to config and install
+- name: Add Node.js and Python to config
   benpops89.mise.mise_tool:
     tools:
       - node@20
       - python@3.11
     state: present
 
-# Install tools globally
-- name: Install tools globally
+# Add tools globally
+- name: Add tools to global config
   benpops89.mise.mise_tool:
     tools:
       - node@20
-      - python@3.11
-    state: present
     global: true
 
-# Uninstall specific tools
-- name: Remove Node.js
+# Remove tools from config
+- name: Remove Node.js from config
   benpops89.mise.mise_tool:
     tools:
       - node@20
@@ -103,20 +102,20 @@ def run_mise_command(module, args, check=True):
     return result
 
 
-def install_tools(module, tools):
+def add_tools(module, tools):
     if not tools:
-        return False, "No tools to install"
+        return False, "No tools to add"
 
-    result = run_mise_command(module, ["install"] + tools)
-    return True, f"Installed tools: {', '.join(tools)}"
+    result = run_mise_command(module, ["use"] + tools)
+    return True, f"Added tools to config: {', '.join(tools)}"
 
 
-def uninstall_tools(module, tools):
+def remove_tools(module, tools):
     if not tools:
-        return False, "No tools to uninstall"
+        return False, "No tools to remove"
 
-    result = run_mise_command(module, ["uninstall"] + tools)
-    return True, f"Uninstalled tools: {', '.join(tools)}"
+    result = run_mise_command(module, ["use", "--remove"] + tools)
+    return True, f"Removed tools from config: {', '.join(tools)}"
 
 
 def run_module():
@@ -135,9 +134,9 @@ def run_module():
     state = module.params.get("state")
 
     if state == "present":
-        changed, msg = install_tools(module, tools)
+        changed, msg = add_tools(module, tools)
     else:
-        changed, msg = uninstall_tools(module, tools)
+        changed, msg = remove_tools(module, tools)
 
     module.exit_json(
         changed=changed,
